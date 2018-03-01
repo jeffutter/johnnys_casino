@@ -16,15 +16,15 @@ defmodule Casino.Table do
   """
 
 
-  def start_link([]) do
-    GenServer.start_link(__MODULE__, [], [name: __MODULE__])
+  def start_link(caller_pid) do
+    GenServer.start_link(__MODULE__, caller_pid, [name: __MODULE__])
   end
 
-  def init([]) do
+  def init(caller_pid) do
 
     send self(), :after_init
 
-    {:ok, %{players: [], max_players: 7, total_games: 0, number_of_games: 100, player_stats: []}}
+    {:ok, %{players: [], max_players: 7, total_games: 0, number_of_games: 100, player_stats: [], caller_pid: caller_pid}}
   end
 
   def get_players() do
@@ -113,6 +113,11 @@ defmodule Casino.Table do
       Logger.info("#{__MODULE__} well that's the game folks!")
       player_stats = state[:player_stats]
       print_game_stats(player_stats)
+
+      if state.caller_pid do
+        send(state.caller_pid, {:done, state})
+      end
+
       players
     end
 
